@@ -1,3 +1,90 @@
+%-------------------------------------------------------------------------------------------
+:- dynamic 	p/1.
+
+% Il faut tout remplir
+p([['_','_','_','_','_','_'],
+['_','_','_','_','_','_'],
+['_','_','_','_','_','_'],
+['_','_','_','_','_','_'],
+['_','_','_','_','_','_'],
+['_','_','_','_','_','_'],
+['_','_','_','_','_','_']
+]).
+
+liste:- liste(1,1).
+
+liste(7,6):- !.
+liste(7,L):- write('
+'), Q is L+1, liste(1,Q).
+liste(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X),write(' '),P is C+1, liste(P,L).
+
+jouer('x').
+jouer('o').
+
+%-------------------------------------------------------------------------------------------
+%atteint le N-ième élément X de la liste
+element(1,X,[X|_]):- !.
+element(N,X,[_|L]):- P is N-1,element(P,X,L).
+
+%vérifie que le coup est possible
+%X est le plateau de jeu
+%S est le numéro de colonne dans laquelle on veut jouer
+coupPossible(X,S) :- checkSbound(S), checkXempty(X,S).
+
+%vérifie que S est dans les bornes imposées (les 7 colonnes)
+checkSbound(S):- member(S,[1,2,3,4,5,6,7]).
+
+%vérifie que la colonne n'est pas pleine'
+checkXempty(X,S) :- element(S,E,X),member('_',E).
+
+%-------------------------------------------------------------------------------------------
+% pour ajouter le coup que joueur joue dans la sous-liste
+% le nouveau element('X' ou 'O') va remplacer le dernier '_'
+add(['_'|L], E, [E|L]).
+add([H|L1], E, [H|L2]) :-
+	add(L1, E, L2).
+
+ajouterCoup(L1,E,L2) :-
+	reverse(L1,R1),
+	add(R1,E,R2),
+	reverse(R2,L2).
+
+% le fait basic pour le copy, il est la sortie de la règle
+copy([], [], _, _,_,_).
+
+/* dans cette partie, pour les variables:
+	N est le numéro de colonne actuelle.
+	Pos est le numéro de colonne que le joueur va ajouter un coup.
+	Nj est le coup, soit 'X' soit 'O'.
+*/
+
+/* ici, on a Pos==N, qui veut dire on est bien sur la colonne que on veut modifier,
+	du coup, on appelle add() pour modifier cette colonne, et on décremente N pour 
+	parcourir une autre colonne */
+
+copy([H1|L1], [H2|L2], Joueur, NumCol, Nmax, N) :-
+	NumCol == N,
+	N2 is N+1,
+	ajouterCoup(H1,Joueur,H2),
+	copy(L1, L2, Joueur, NumCol, Nmax, N2).
+
+/* 	Lorsque Pos\==N, on décremente N pour 
+	parcourir une autre colonne */
+
+copy([H|L1], [H|L2], Joueur, NumCol, Nmax, N) :-
+	NumCol \== N,
+	N2 is N+1,
+	copy(L1, L2, Joueur, NumCol, Nmax, N2).
+
+
+/* au début, N est la longueur de la liste, dans notre cas, N est 8
+	on appelle copy() pour réaliser la modification */
+
+modif(X,Joueur,NumCol,NewX) :-
+	length(X, Nmax),
+	N=1,
+	copy(X, NewX, Joueur, NumCol, Nmax, N).
+%-------------------------------------------------------------------------------------------
 /*
 	isEOG/1
 	param1 = The game board represented as a list of
@@ -8,13 +95,13 @@
 */
 /*TODO*/
 isEOG(X) :-
-	checkVertical(R).
+	checkVertical(X).
 isEOG(X) :-
-	checkHorizontal(R).
+	checkHorizontal(X).
 isEOG(X) :-
-	checkDiagonal(R).
+	checkDiagonal(X).
 isEOG(X) :-
-	checkDraw(R).
+	checkDraw(X).
 /*
 	segment/1
 	param1 = The list we want to check.
@@ -104,13 +191,10 @@ checkDiagonal([_,_,_,[X41,X42,X43,X44,X45,X46|X4T],[X51,X52,X53,X54,X55|X5T],[X6
 	be put.
 	Returns = true if the game is a draw, false otherwise.
 */
-checkDraw([[X1|X1T],[X2|X2T],[X3|X3T],[X4|X4T],[X5|X5T],[X6|X6T],[X7|X7T],[X8|X8T]]) :-
-	draw([X1,X2,X3,X4,X5,X6,X7,X8]).
+checkDraw([[X1|X1T],[X2|X2T],[X3|X3T],[X4|X4T],[X5|X5T],[X6|X6T],[X7|X7T]]) :-
+	draw([X1,X2,X3,X4,X5,X6,X7]).
 
-/*
-	Might be unnecessary. Further testing needed.
-*/
-
+cpy(L,R) :- accCp(L,R).
 accCp([],[]).
 accCp([H|T1],[H|T2]) :-
 	accCp(T1,T2).
@@ -124,27 +208,17 @@ draw([x|XT]) :-
 draw([o|XT]) :-
 	draw(XT).
 
-t1:-
-isEOG([[x,0,0,0,0,0],[o,0,0,0,0,0],[x,0,0,0,0,0],[o,0,0,0,0,0],[x,o,0,0,0,0],[o,0,o,0,0,0],[x,0,0,o,0,0]]).
+%-------------------------------------------------------------------------------------------
 
-t2:-
-isEOG([[x,0,0,0,0,0],[o,0,0,0,0,0],[x,0,0,0,0,0],[o,0,0,0,0,0],[x,o,0,0,0,0],[o,0,o,0,0,0],[x,0,0,o,0,0]]).
+nouveauCoup(Joueur,NumCol) :-
+	p(X),
+	jouer(Joueur),
+	coupPossible(X,NumCol),
+	modif(X,Joueur,NumCol,NewX),
+	\+isEOG(NewX),
+	write(X),nl,
+	write(NewX),nl.
+		/*retract(p(X)),
+		assert(p(NewX)),
+		liste.*/
 
-t3:-
-isEOG([[x,0,0,0,0,0],[o,0,0,0,0,0],[x,0,0,0,0,0],[o,0,0,0,0,0],[x,o,0,0,0,0],[o,0,o,0,0,0],[x,0,0,o,0,0]]).
-
-t4:-
-isEOG([[x,0,0,0,0,0],[o,0,0,0,0,0],[x,0,0,0,0,0],[o,0,0,0,0,0],[x,o,0,0,0,0],[o,0,o,0,0,0],[x,0,0,o,0,0]]).
-
-t5:-
-isEOG([[x,0,0,0,0,0],[o,0,0,0,0,0],[x,0,0,0,0,0],[o,0,0,0,0,0],[x,o,0,0,0,0],[o,0,o,0,0,0],[x,0,0,o,0,0]]).
-
-tests:-
-	t1,
-	t2,
-	t3,
-	t4.
-
-go:-
-	consult('isEOG.pl'),
-	tests.
