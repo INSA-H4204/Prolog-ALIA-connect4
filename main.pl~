@@ -1,22 +1,22 @@
 %-------------------------------------------------------------------------------------------
-:- dynamic p/1.
+:- dynamic 	p/1.
 
-% space de jeu vide
+% Il faut tout remplir
 p([['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
-['_','_','_','_','_','_']]).
+['_','_','_','_','_','_']
+]).
 
-% affiche l'espace de jeu en 'console'
-liste:- liste(0,0).
-liste(6,5):- writeElement(6,5), !.
-liste(6,L):- writeElement(6,L), writeln(''), Q is L+1, liste(0,Q).
-liste(C,L):- writeElement(C,L), write(' '),P is C+1, liste(P,L).
+liste:- liste(1,1).
 
-writeElement(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X).
+liste(7,6):- !.
+liste(7,L):- write('
+'), Q is L+1, liste(1,Q).
+liste(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X),write(' '),P is C+1, liste(P,L).
 
 jouer('x').
 jouer('o').
