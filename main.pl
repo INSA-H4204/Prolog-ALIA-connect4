@@ -1,22 +1,24 @@
 %-------------------------------------------------------------------------------------------
-:- dynamic 	p/1.
+:- dynamic p/1.
 
-% Il faut tout remplir
-p([['_','_','_','_','_','_'],
-['_','_','_','_','_','_'],
-['_','_','_','_','_','_'],
-['_','_','_','_','_','_'],
-['_','_','_','_','_','_'],
-['_','_','_','_','_','_'],
-['_','_','_','_','_','_']
-]).
+% space de jeu vide
+p([['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_'],
+['_','_','_','_','_','_','_','_']]).
 
-liste:- liste(1,1).
+% affiche l'espace de jeu en 'console''
+liste:- liste(0,0).
+liste(7,7):- writeElement(7,7), !.
+liste(7,L):- writeElement(7,L), writeln(''), Q is L+1, liste(0,Q).
+liste(C,L):- writeElement(C,L), write(' '),P is C+1, liste(P,L).
 
-liste(7,6):- !.
-liste(7,L):- write('
-'), Q is L+1, liste(1,Q).
-liste(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X),write(' '),P is C+1, liste(P,L).
+writeElement(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X).
+
 
 jouer('x').
 jouer('o').
@@ -217,8 +219,8 @@ nouveauCoup(Joueur,NumCol) :-
 	modif(X,Joueur,NumCol,NewX),
 	\+isEOG(NewX),
 	write(X),nl,
-	write(NewX),nl.
-		/*retract(p(X)),
-		assert(p(NewX)),
-		liste.*/
+	write(NewX),nl,
+	retract(p(X)),
+	assert(p(NewX)),
+	liste.
 
