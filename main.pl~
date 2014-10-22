@@ -1,24 +1,22 @@
 %-------------------------------------------------------------------------------------------
-:- dynamic p/1.
+:- dynamic 	p/1.
 
-% space de jeu vide
-
+% Il faut tout remplir
 p([['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
 ['_','_','_','_','_','_'],
-['_','_','_','_','_','_']]).
+['_','_','_','_','_','_']
+]).
 
-% affiche l'espace de jeu en 'console''
-liste:- liste(0,0).
-liste(6,5):- writeElement(6,5), !.
-liste(6,L):- writeElement(6,L), writeln(''), Q is L+1, liste(0,Q).
-liste(C,L):- writeElement(C,L), write(' '),P is C+1, liste(P,L).
+liste:- liste(1,1).
 
-writeElement(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X).
-
+liste(7,6):- !.
+liste(7,L):- write('
+'), Q is L+1, liste(1,Q).
+liste(C,L):- p(Liste), nth0(C,Liste,E), nth0(L,E,X), write(X),write(' '),P is C+1, liste(P,L).
 
 jouer('x').
 jouer('o').
@@ -42,19 +40,17 @@ checkXempty(X,S) :- element(S,E,X),member('_',E).
 %-------------------------------------------------------------------------------------------
 % pour ajouter le coup que joueur joue dans la sous-liste
 % le nouveau element('X' ou 'O') va remplacer le dernier '_'
-add(['_'|L], E, [E|L],N,N).
-add([H|L1], E, [H|L2],NumLigne,N) :-
-	N2 is N-1,
-	add(L1, E, L2,NumLigne,N2).
+add(['_'|L], E, [E|L]).
+add([H|L1], E, [H|L2]) :-
+	add(L1, E, L2).
 
-ajouterCoup(L1,E,L2,NumLigne) :-
+ajouterCoup(L1,E,L2) :-
 	reverse(L1,R1),
-	length(L1, N),
-	add(R1,E,R2,NumLigne,N),
+	add(R1,E,R2),
 	reverse(R2,L2).
 
 % le fait basic pour le copy, il est la sortie de la règle
-copy([], [], _, _,_,_,_).
+copy([], [], _, _,_,_).
 
 /* dans cette partie, pour les variables:
 	N est le numéro de colonne actuelle.
@@ -66,19 +62,19 @@ copy([], [], _, _,_,_,_).
 	du coup, on appelle add() pour modifier cette colonne, et on décremente N pour 
 	parcourir une autre colonne */
 
-copy([H1|L1], [H2|L2], Joueur, NumCol, NumLigne, Nmax, N) :-
+copy([H1|L1], [H2|L2], Joueur, NumCol, Nmax, N) :-
 	NumCol == N,
 	N2 is N+1,
-	ajouterCoup(H1,Joueur,H2,NumLigne),
-	copy(L1, L2, Joueur, NumCol, NumLigne,Nmax, N2).
+	ajouterCoup(H1,Joueur,H2),
+	copy(L1, L2, Joueur, NumCol, Nmax, N2).
 
 /* 	Lorsque Pos\==N, on décremente N pour 
 	parcourir une autre colonne */
 
-copy([H|L1], [H|L2], Joueur, NumCol,NumLigne, Nmax, N) :-
+copy([H|L1], [H|L2], Joueur, NumCol, Nmax, N) :-
 	NumCol \== N,
 	N2 is N+1,
-	copy(L1, L2, Joueur, NumCol, NumLigne,Nmax, N2).
+	copy(L1, L2, Joueur, NumCol, Nmax, N2).
 
 
 /* au début, N est la longueur de la liste, dans notre cas, N est 8
@@ -87,16 +83,7 @@ copy([H|L1], [H|L2], Joueur, NumCol,NumLigne, Nmax, N) :-
 modif(X,Joueur,NumCol,NewX) :-
 	length(X, Nmax),
 	N=1,
-	copy(X, NewX, Joueur, NumCol, NumLigne,Nmax, N),
-	Joueur == 'x',
-	addRouge(NumLigne,NumCol).
-	
-modif(X,Joueur,NumCol,NewX) :-
-	length(X, Nmax),
-	N=1,
-	copy(X, NewX, Joueur, NumCol, NumLigne,Nmax, N),
-	Joueur == 'o',
-	addJaune(NumLigne,NumCol).
+	copy(X, NewX, Joueur, NumCol, Nmax, N).
 %-------------------------------------------------------------------------------------------
 /*
 	isEOG/1
@@ -115,8 +102,7 @@ isEOG(X) :-
 	checkDiagonal(X).
 isEOG(X) :-
 	checkDraw(X).
-
-	/*
+/*
 	segment/1
 	param1 = The list we want to check.
 	Checks if there are four identical pieces of x or o in
@@ -224,35 +210,15 @@ draw([o|XT]) :-
 
 %-------------------------------------------------------------------------------------------
 
-% I numero de ligne (1-6) et J numero de colonne (1-7) %
-addRouge(I,J) :- send(@w, display, new(Ci, circle(80)), point(J*100-50,I*100-50)),
-				 send(Ci, fill_pattern, colour(red)).
-				 
-% I numero de ligne (1-6) et J numero de colonne (1-7) %
-addJaune(I,J) :- send(@w, display, new(Ci, circle(80)), point(J*100-50,I*100-50)),
-				 send(Ci, fill_pattern, colour(yellow)).
-	
-%-------------------------------------------------------------------------------------------
-demarrerJeu:- new(@w, window('CONNECT 4')),
-			send(@w, open),
-			send(@w, size, size(790,690)).
-			
 nouveauCoup(Joueur,NumCol) :-
 	p(X),
 	jouer(Joueur),
 	coupPossible(X,NumCol),
-	\+isEOG(X),
-	write('test'),
 	modif(X,Joueur,NumCol,NewX),
-	retract(p(X)),
-	assert(p(NewX)),
-	liste.
-
-nouveauCoup(Joueur,NumCol) :-
-	p(X),
-	jouer(Joueur),
-	coupPossible(X,NumCol),
-	isEOG(X),
-	write('fini!').
-
+	\+isEOG(NewX),
+	write(X),nl,
+	write(NewX),nl.
+		/*retract(p(X)),
+		assert(p(NewX)),
+		liste.*/
 
